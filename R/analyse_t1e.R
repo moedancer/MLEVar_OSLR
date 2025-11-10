@@ -1,3 +1,5 @@
+### Script to analyse type I error results from single scenario files
+
 library(ggplot2)
 library(tidyr)
 library(ggpubr)
