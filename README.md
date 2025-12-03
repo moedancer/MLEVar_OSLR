@@ -1,6 +1,8 @@
 # MLEVar_OSLR
 Accounting for variability in reference curves from MLE estimates in one-sample log-rank tests
 
+This repository accompanies the preprint [Correcting for sampling variability in maximum likelihood-based one-sample log-rank tests](https://arxiv.org/abs/2512.02878). It contains the simulation and case study mentioned therein.
+
 This repository contains the following R scripts:
 - `t1e_sim.R`: Simulation study to analyse type I error rates of corrected and uncorrected one-sample log-rank tests for which the reference curve is determined by MLE estimates. One single scenario with fixed shape parameter of a Weibull distribution and fixed sample sizes in both groups is considered. The scale parameter of the Weibull distribution is chosen in such a way that the 1-year survival probability is given by 50%. Raw study results are produced and saved in the folder `results/single_scenarios`.
 - `analyse_t1e.R`: Aggregation of raw simulation results from `t1e_sim.R` and production of plots for type I error rates. Plots are saved in the folder `results/plots`.
