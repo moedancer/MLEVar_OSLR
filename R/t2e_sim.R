@@ -13,7 +13,11 @@ passed_args <- commandArgs(trailingOnly = TRUE)
 n_a <- 100
 n_b <- 100
 my_shape <- 1
+hr <- 1
 
+if (length(passed_args) >= 4) {
+  hr <- as.numeric(passed_args[[4]])
+}
 if (length(passed_args) >= 3) {
   my_shape <- as.numeric(passed_args[[3]])
 }
@@ -32,6 +36,8 @@ alloc_ratio <- n_b / n_a
 # Define remaining parameters of survival time distribution
 one_year_surv <- 0.5
 my_scale <- (-log(one_year_surv))^(-1 / my_shape)
+# Scale parameter in treatment group
+my_scale_tr <- my_scale / (hr^(1 / my_shape))
 
 cum_hazard_fct <- function(time, shape, scale) (time / scale)^shape
 gradient_cum_haz_fct <- function(time, shape, scale) {
@@ -89,7 +95,7 @@ for (i in 1:simulation_runs) {
 
   weibull_mles[i, ] <- mle_estimate
 
-  raw_time_exp <- rweibull(n_b, shape = my_shape, scale = my_scale)
+  raw_time_exp <- rweibull(n_b, shape = my_shape, scale = my_scale_tr)
   censoring_time_exp <- runif(n_b, min = follow_up, max = accrual + follow_up)
 
   time_exp <- pmin(raw_time_exp, censoring_time_exp)
@@ -149,16 +155,19 @@ results <- data.frame(
 results$n_b <- n_b
 results$alloc_ratio <- alloc_ratio
 results$shape <- my_shape
+results$hr <- hr
 
 save(
   results,
   file = paste(
-    "results/single_scenarios/t1e_raw_KAPPA",
+    "results/single_scenarios/t2e_raw_KAPPA",
     sub(x = my_shape, pattern = "\\.", replacement = "dec"),
     "_NA",
     n_a,
     "_NB",
     n_b,
+    "_HR",
+    sub(x = round(hr, digits = 4), pattern = "\\.", replacement = "dec"),
     ".Rda",
     sep = ""
   )
