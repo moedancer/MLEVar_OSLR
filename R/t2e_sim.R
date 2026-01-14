@@ -60,7 +60,7 @@ gradient_cum_haz_fct_exp <- Vectorize(
 accrual <- 2
 follow_up <- 3
 
-simulation_runs <- 1000
+simulation_runs <- 100000
 weibull_mles <- matrix(0, ncol = 2, nrow = simulation_runs)
 if (my_shape == 1) {
   exp_mles <- rep(0, simulation_runs)
