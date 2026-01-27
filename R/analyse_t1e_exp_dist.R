@@ -1,4 +1,4 @@
-### Script to analyse power results from single scenario files with exponential distribution
+### Script to analyse type I error rate results from single scenario files with exponential distribution
 
 library(ggplot2)
 library(tidyr)
@@ -9,7 +9,7 @@ results_all <- NULL
 
 for (tmp_file in list.files(
   path = "results/single_scenarios",
-  pattern = "t2e_raw_KAPPA1_"
+  pattern = "t1e_raw_KAPPA1_"
 )) {
   load(paste("results/single_scenarios/", tmp_file, sep = ""))
   results_all <- rbind(results_all, results)
@@ -324,6 +324,106 @@ kappa_vec <- unique(results_all$shape)
 
 for (alloc_ratio_temp in alloc_ratio_vec) {
   for (n_b_temp in n_b_vec) {
+    ts_rates_nfix_kfix_temp <-
+      ggplot(
+        data = ts_rates_long[
+          ts_rates_long$n_b == n_b_temp,
+        ],
+        aes(x = alloc_ratio, y = rate)
+      ) +
+      geom_line(aes(colour = Test)) +
+      geom_point(aes(colour = Test)) +
+      geom_abline(intercept = ts_alpha, slope = 0) +
+      annotate(
+        "rect",
+        xmin = -Inf,
+        xmax = Inf,
+        ymin = ts_alpha_lb_ci,
+        ymax = ts_alpha_ub_ci,
+        alpha = 0.25
+      ) +
+      ylim(0, NA) +
+      xlab(bquote(
+        allocation ~ ratio ~ "(" * n[b] ~ "=" ~ .(n_b_temp) * ")"
+      )) +
+      ylab("rejection rate")
+    ggsave(
+      filename = paste(
+        "n_kappa_fixed/ts_rates_exp_n",
+        n_b_temp,
+        ".pdf",
+        sep = ""
+      ),
+      path = plotdir,
+      plot = ts_rates_nfix_kfix_temp,
+      device = "pdf",
+      height = 5,
+      width = 7
+    )
+
+    ts_rates_pifix_kfix_temp <-
+      ggplot(
+        data = ts_rates_long[
+          ts_rates_long$alloc_ratio == alloc_ratio_temp,
+        ],
+        aes(x = n_b, y = rate)
+      ) +
+      geom_line(aes(colour = Test)) +
+      geom_point(aes(colour = Test)) +
+      geom_abline(intercept = ts_alpha, slope = 0) +
+      annotate(
+        "rect",
+        xmin = -Inf,
+        xmax = Inf,
+        ymin = ts_alpha_lb_ci,
+        ymax = ts_alpha_ub_ci,
+        alpha = 0.25
+      ) +
+      ylim(0, NA) +
+      xlab(bquote(
+        n[b] ~ "(" * allocation ~ ratio ~ "=" ~ .(alloc_ratio_temp) * ")"
+      )) +
+      ylab("rejection rate")
+    ggsave(
+      filename = paste(
+        "alloc_kappa_fixed/ts_rates_exp_pi",
+        sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
+        ".pdf",
+        sep = ""
+      ),
+      path = plotdir,
+      plot = ts_rates_pifix_kfix_temp,
+      device = "pdf",
+      height = 5,
+      width = 7
+    )
+
+    ts_rates_kfix_temp <-
+      ggarrange(
+        ts_rates_nfix_kfix_temp,
+        ts_rates_pifix_kfix_temp,
+        ncol = 2,
+        nrow = 1,
+        common.legend = TRUE,
+        legend = "right"
+      )
+    ggsave(
+      filename = paste(
+        "combined/ts_rates_exp",
+        "_n",
+        n_b_temp,
+        "_pi",
+        sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
+        ".pdf",
+        sep = ""
+      ),
+      path = plotdir,
+      plot = ts_rates_kfix_temp,
+      device = "pdf",
+      height = 5,
+      width = 12
+    )
+
     os_left_rates_nfix_kfix_temp <-
       ggplot(
         data = os_left_rates_long[
@@ -349,7 +449,7 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
       ylab("rejection rate")
     ggsave(
       filename = paste(
-        "n_kappa_fixed/power_exp_n",
+        "n_kappa_fixed/os_left_rates_exp_n",
         n_b_temp,
         ".pdf",
         sep = ""
@@ -386,7 +486,7 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
       ylab("rejection rate")
     ggsave(
       filename = paste(
-        "alloc_kappa_fixed/power_exp_pi",
+        "alloc_kappa_fixed/os_left_rates_exp_pi",
         sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
         ".pdf",
         sep = ""
@@ -409,7 +509,7 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
       )
     ggsave(
       filename = paste(
-        "combined/power_exp",
+        "combined/os_left_rates_exp",
         "_n",
         n_b_temp,
         "_pi",

@@ -3,15 +3,17 @@
 library(ggplot2)
 library(tidyr)
 library(ggpubr)
+library(tidyverse)
 
 # Load and combine results from all single scenario files
 results_all <- NULL
 
 for (tmp_file in list.files(
   path = "results/single_scenarios",
-  pattern = "t1e_"
+  pattern = "t2e_"
 )) {
   load(paste("results/single_scenarios/", tmp_file, sep = ""))
+  results <- results |> select(-contains("exp"))
   results_all <- rbind(results_all, results)
 }
 
@@ -229,113 +231,6 @@ kappa_vec <- unique(results_all$shape)
 for (kappa_temp in kappa_vec) {
   for (alloc_ratio_temp in alloc_ratio_vec) {
     for (n_b_temp in n_b_vec) {
-      ts_rates_nfix_kfix_temp <-
-        ggplot(
-          data = ts_rates_long[
-            ts_rates_long$shape == kappa_temp &
-              ts_rates_long$n_b == n_b_temp,
-          ],
-          aes(x = alloc_ratio, y = rate)
-        ) +
-        geom_line(aes(colour = Test)) +
-        geom_point(aes(colour = Test)) +
-        geom_abline(intercept = ts_alpha, slope = 0) +
-        annotate(
-          "rect",
-          xmin = -Inf,
-          xmax = Inf,
-          ymin = ts_alpha_lb_ci,
-          ymax = ts_alpha_ub_ci,
-          alpha = 0.25
-        ) +
-        ylim(0, NA) +
-        xlab(bquote(
-          allocation ~ ratio ~ "(" * n[b] ~ "=" ~ .(n_b_temp) * ")"
-        )) +
-        ylab("rejection rate")
-      ggsave(
-        filename = paste(
-          "n_kappa_fixed/ts_rates_n",
-          n_b_temp,
-          "_k",
-          sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
-          ".pdf",
-          sep = ""
-        ),
-        path = plotdir,
-        plot = ts_rates_nfix_kfix_temp,
-        device = "pdf",
-        height = 5,
-        width = 7
-      )
-
-      ts_rates_pifix_kfix_temp <-
-        ggplot(
-          data = ts_rates_long[
-            ts_rates_long$shape == kappa_temp &
-              ts_rates_long$alloc_ratio == alloc_ratio_temp,
-          ],
-          aes(x = n_b, y = rate)
-        ) +
-        geom_line(aes(colour = Test)) +
-        geom_point(aes(colour = Test)) +
-        geom_abline(intercept = ts_alpha, slope = 0) +
-        annotate(
-          "rect",
-          xmin = -Inf,
-          xmax = Inf,
-          ymin = ts_alpha_lb_ci,
-          ymax = ts_alpha_ub_ci,
-          alpha = 0.25
-        ) +
-        ylim(0, NA) +
-        xlab(bquote(
-          n[b] ~ "(" * allocation ~ ratio ~ "=" ~ .(alloc_ratio_temp) * ")"
-        )) +
-        ylab("rejection rate")
-      ggsave(
-        filename = paste(
-          "alloc_kappa_fixed/ts_rates_pi",
-          sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
-          "_k",
-          sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
-          ".pdf",
-          sep = ""
-        ),
-        path = plotdir,
-        plot = ts_rates_pifix_kfix_temp,
-        device = "pdf",
-        height = 5,
-        width = 7
-      )
-
-      ts_rates_kfix_temp <-
-        ggarrange(
-          ts_rates_nfix_kfix_temp,
-          ts_rates_pifix_kfix_temp,
-          ncol = 2,
-          nrow = 1,
-          common.legend = TRUE,
-          legend = "right"
-        )
-      ggsave(
-        filename = paste(
-          "combined/ts_rates_k",
-          sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
-          "_n",
-          n_b_temp,
-          "_pi",
-          sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
-          ".pdf",
-          sep = ""
-        ),
-        path = plotdir,
-        plot = ts_rates_kfix_temp,
-        device = "pdf",
-        height = 5,
-        width = 12
-      )
-
       os_left_rates_nfix_kfix_temp <-
         ggplot(
           data = os_left_rates_long[
@@ -362,7 +257,7 @@ for (kappa_temp in kappa_vec) {
         ylab("rejection rate")
       ggsave(
         filename = paste(
-          "n_kappa_fixed/os_left_rates_n",
+          "n_kappa_fixed/power_n",
           n_b_temp,
           "_k",
           sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
@@ -402,7 +297,7 @@ for (kappa_temp in kappa_vec) {
         ylab("rejection rate")
       ggsave(
         filename = paste(
-          "alloc_kappa_fixed/os_left_rates_pi",
+          "alloc_kappa_fixed/power_pi",
           sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
           "_k",
           sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
@@ -427,7 +322,7 @@ for (kappa_temp in kappa_vec) {
         )
       ggsave(
         filename = paste(
-          "combined/os_left_rates_k",
+          "combined/power_k",
           sub(x = kappa_temp, pattern = "\\.", replacement = "dec"),
           "_n",
           n_b_temp,
