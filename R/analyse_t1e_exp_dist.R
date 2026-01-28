@@ -433,13 +433,13 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
       ) +
       geom_line(aes(colour = Test)) +
       geom_point(aes(colour = Test)) +
-      geom_abline(intercept = ts_alpha, slope = 0) +
+      geom_abline(intercept = os_alpha, slope = 0) +
       annotate(
         "rect",
         xmin = -Inf,
         xmax = Inf,
-        ymin = ts_alpha_lb_ci,
-        ymax = ts_alpha_ub_ci,
+        ymin = os_alpha_lb_ci,
+        ymax = os_alpha_ub_ci,
         alpha = 0.25
       ) +
       ylim(0, NA) +
@@ -470,13 +470,13 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
       ) +
       geom_line(aes(colour = Test)) +
       geom_point(aes(colour = Test)) +
-      geom_abline(intercept = ts_alpha, slope = 0) +
+      geom_abline(intercept = os_alpha, slope = 0) +
       annotate(
         "rect",
         xmin = -Inf,
         xmax = Inf,
-        ymin = ts_alpha_lb_ci,
-        ymax = ts_alpha_ub_ci,
+        ymin = os_alpha_lb_ci,
+        ymax = os_alpha_ub_ci,
         alpha = 0.25
       ) +
       ylim(0, NA) +

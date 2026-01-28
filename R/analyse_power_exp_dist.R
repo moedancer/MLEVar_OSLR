@@ -322,26 +322,26 @@ n_b_vec <- unique(results_all$n_b)
 alloc_ratio_vec <- unique(results_all$alloc_ratio)
 kappa_vec <- unique(results_all$shape)
 
+sensible_choices <- c(
+  "Corrected OSLR",
+  "Corrected OSLR (Wu)",
+  "Corrected OSLR (exp. dist.)",
+  "Corrected OSLR (exp. dist., Wu)",
+  "TSLR"
+)
+
 for (alloc_ratio_temp in alloc_ratio_vec) {
   for (n_b_temp in n_b_vec) {
     os_left_rates_nfix_kfix_temp <-
       ggplot(
         data = os_left_rates_long[
-          os_left_rates_long$n_b == n_b_temp,
+          os_left_rates_long$n_b == n_b_temp &
+            os_left_rates_long$Test %in% sensible_choices,
         ],
         aes(x = alloc_ratio, y = rate)
       ) +
       geom_line(aes(colour = Test)) +
       geom_point(aes(colour = Test)) +
-      geom_abline(intercept = ts_alpha, slope = 0) +
-      annotate(
-        "rect",
-        xmin = -Inf,
-        xmax = Inf,
-        ymin = ts_alpha_lb_ci,
-        ymax = ts_alpha_ub_ci,
-        alpha = 0.25
-      ) +
       ylim(0, NA) +
       xlab(bquote(
         allocation ~ ratio ~ "(" * n[b] ~ "=" ~ .(n_b_temp) * ")"
@@ -364,21 +364,13 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
     os_left_rates_pifix_kfix_temp <-
       ggplot(
         data = os_left_rates_long[
-          os_left_rates_long$alloc_ratio == alloc_ratio_temp,
+          os_left_rates_long$alloc_ratio == alloc_ratio_temp &
+            os_left_rates_long$Test %in% sensible_choices,
         ],
         aes(x = n_b, y = rate)
       ) +
       geom_line(aes(colour = Test)) +
       geom_point(aes(colour = Test)) +
-      geom_abline(intercept = ts_alpha, slope = 0) +
-      annotate(
-        "rect",
-        xmin = -Inf,
-        xmax = Inf,
-        ymin = ts_alpha_lb_ci,
-        ymax = ts_alpha_ub_ci,
-        alpha = 0.25
-      ) +
       ylim(0, NA) +
       xlab(bquote(
         n[b] ~ "(" * allocation ~ ratio ~ "=" ~ .(alloc_ratio_temp) * ")"
