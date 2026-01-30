@@ -322,12 +322,25 @@ n_b_vec <- unique(results_all$n_b)
 alloc_ratio_vec <- unique(results_all$alloc_ratio)
 kappa_vec <- unique(results_all$shape)
 
+exp_vs_weibull <- c(
+  "Corrected OSLR",
+  "Corrected OSLR (Wu)",
+  "Corrected OSLR (exp. dist.)",
+  "Corrected OSLR (exp. dist., Wu)",
+  "Uncorrected OSLR",
+  "Uncorrected OSLR (Wu)",
+  "Uncorrected OSLR (exp. dist.)",
+  "Uncorrected OSLR (exp. dist., Wu)"
+)
+
 for (alloc_ratio_temp in alloc_ratio_vec) {
   for (n_b_temp in n_b_vec) {
+    ### Plots to compare procedures based on exponential MLEs with those based on Weibull MLEs
     ts_rates_nfix_kfix_temp <-
       ggplot(
         data = ts_rates_long[
-          ts_rates_long$n_b == n_b_temp,
+          ts_rates_long$n_b == n_b_temp &
+            ts_rates_long$Test %in% exp_vs_weibull,
         ],
         aes(x = alloc_ratio, y = rate)
       ) +
@@ -364,7 +377,8 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
     ts_rates_pifix_kfix_temp <-
       ggplot(
         data = ts_rates_long[
-          ts_rates_long$alloc_ratio == alloc_ratio_temp,
+          ts_rates_long$alloc_ratio == alloc_ratio_temp &
+            ts_rates_long$Test %in% exp_vs_weibull,
         ],
         aes(x = n_b, y = rate)
       ) +
@@ -427,7 +441,8 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
     os_left_rates_nfix_kfix_temp <-
       ggplot(
         data = os_left_rates_long[
-          os_left_rates_long$n_b == n_b_temp,
+          os_left_rates_long$n_b == n_b_temp &
+            os_left_rates_long$Test %in% exp_vs_weibull,
         ],
         aes(x = alloc_ratio, y = rate)
       ) +
@@ -464,7 +479,8 @@ for (alloc_ratio_temp in alloc_ratio_vec) {
     os_left_rates_pifix_kfix_temp <-
       ggplot(
         data = os_left_rates_long[
-          os_left_rates_long$alloc_ratio == alloc_ratio_temp,
+          os_left_rates_long$alloc_ratio == alloc_ratio_temp &
+            os_left_rates_long$Test %in% exp_vs_weibull,
         ],
         aes(x = n_b, y = rate)
       ) +
