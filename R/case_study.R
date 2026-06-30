@@ -106,8 +106,8 @@ legend(
   x = "topright",
   legend = c(
     "experimental group",
-    "historic control",
-    "historic control (parametric fit)"
+    "historical control",
+    "historical control (parametric fit)"
   ),
   col = c("orange", "blue", "blue"),
   lty = c(1, 1, 2),
