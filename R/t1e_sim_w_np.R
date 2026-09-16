@@ -24,6 +24,11 @@ if (length(passed_args) >= 1) {
   n_a <- as.integer(passed_args[[1]])
 }
 
+hpc_version <- FALSE # Is this the version running on PALMA II?
+if (hpc_version) {
+  .libPaths("/home/d/danzerm/R/library")
+}
+
 require(survival)
 require(flexsurv)
 require(nph)
@@ -171,11 +176,12 @@ for (i in 1:simulation_runs) {
     times = exp_data$time,
     extend = TRUE
   )
+  reference_na_values <- reference_evaluation_na$cumhaz
   est_hazard_random_error_np[i] <- 1 /
     sqrt(n_b) *
     sum(
       cum_hazard_fct(time_exp, my_shape, my_scale) -
-        reference_evaluation_na
+        reference_na_values
     )
 
   # Compute one-sample log-rank statistics based on true curve
@@ -202,7 +208,7 @@ for (i in 1:simulation_runs) {
       n_b
   }
   # ...based on estimated non-parametric hazard function
-  est_var_oslr_pqv_na <- sum(reference_evaluation_na)
+  est_var_oslr_pqv_na <- sum(reference_na_values)
 
   # Estimate additional variance...
   # ...for parametric reference curve
@@ -233,7 +239,7 @@ for (i in 1:simulation_runs) {
     extend = TRUE
   )
   reference_gw_values <- reference_evaluation_gw$std.chaz^2
-  est_var_na_error[i] <- reference_gw_values / n_b
+  est_var_na_error[i] <- sum(reference_gw_values) / n_b
 }
 
 if (my_shape != 1) {
@@ -274,7 +280,7 @@ results$shape <- my_shape
 save(
   results,
   file = paste(
-    "results/single_scenarios/t1e_raw_KAPPA",
+    "results/single_scenarios/t1e_raw_w_np_KAPPA",
     sub(x = my_shape, pattern = "\\.", replacement = "dec"),
     "_NA",
     n_a,
