@@ -1,17 +1,19 @@
 library(tidyverse)
+library(patchwork)
 
 # Load and combine results from all single scenario files under null hypothesis
 results_all <- NULL
 for (tmp_file in list.files(
-  path = "results/single_scenarios/w_np/",
-  pattern = "t1e_raw_w_np_KAPPA1_"
+  path = "results/single_scenarios/w_np/"
 )) {
   load(paste("results/single_scenarios/w_np/", tmp_file, sep = ""))
-  results_all <- rbind(results_all, results)
+  results_all <- bind_rows(results_all, results)
 }
 
 # Compute missing sample size
 results_all$n_a <- results_all$n_b / results_all$alloc_ratio
+# Set hazard ratio to 1 for simulations under H0
+results_all$hr[is.na(results_all$hr)] <- 1
 
 ### Compute different variance estimates
 ## Compute Wu's variance with true parameters
@@ -235,7 +237,7 @@ ts_rates <- aggregate(
     pts_mle_exp_cor_Wu,
     pts_na_cor_Wu,
     pts_lr
-  ) ~ n_b + alloc_ratio + shape,
+  ) ~ hr + alloc_ratio,
   data = results_all,
   FUN = function(x) mean(x <= ts_alpha)
 )
@@ -280,7 +282,7 @@ os_left_rates <- aggregate(
     pos_mle_exp_cor_Wu,
     pos_na_cor_Wu,
     pos_lr
-  ) ~ n_b + alloc_ratio + shape,
+  ) ~ hr + alloc_ratio,
   data = results_all,
   FUN = function(x) mean(x <= os_alpha)
 )
@@ -324,7 +326,7 @@ os_right_rates <- aggregate(
     pos_mle_exp_cor_Wu,
     pos_na_cor_Wu,
     pos_lr
-  ) ~ n_b + alloc_ratio + shape,
+  ) ~ hr + alloc_ratio,
   data = results_all,
   FUN = function(x) mean((1 - x) <= os_alpha)
 )
@@ -355,42 +357,42 @@ rename_procedures <- function(my_df) {
   my_df$Test[my_df$Test %in% c("pts_lr", "pos_lr")] <- "TSLR"
   my_df$Test[
     my_df$Test %in% c("pts_mle_cor_pqv", "pos_mle_cor_pqv")
-  ] <- "Corrected OSLR"
+  ] <- "Corrected OSLR (pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_cor_pqv", "pos_mle_exp_cor_pqv")
-  ] <- "Corrected OSLR (exp. dist.)"
+  ] <- "Corrected OSLR (exp. dist., pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_na_cor_pqv", "pos_na_cor_pqv")
-  ] <- "Corrected OSLR (non-par.)"
+  ] <- "Corrected OSLR (non-par., pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_cor_Wu", "pos_mle_cor_Wu")
-  ] <- "Corrected OSLR (Wu)"
+  ] <- "Corrected OSLR"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_cor_Wu", "pos_mle_exp_cor_Wu")
-  ] <- "Corrected OSLR (exp. dist., Wu)"
+  ] <- "Corrected OSLR (exp. dist.)"
   my_df$Test[
     my_df$Test %in% c("pts_na_cor_Wu", "pos_na_cor_Wu")
-  ] <- "Corrected OSLR (non-par., Wu)"
+  ] <- "Corrected OSLR (non-par.)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_uncor_pqv", "pos_mle_uncor_pqv")
-  ] <- "Uncorrected OSLR"
+  ] <- "Uncorrected OSLR (pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_uncor_pqv", "pos_mle_exp_uncor_pqv")
-  ] <- "Uncorrected OSLR (exp. dist.)"
+  ] <- "Uncorrected OSLR (exp. dist., pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_na_uncor_pqv", "pos_na_uncor_pqv")
-  ] <- "Uncorrected OSLR (non-par.)"
+  ] <- "Uncorrected OSLR (non-par., pqv)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_uncor_Wu", "pos_mle_uncor_Wu")
-  ] <- "Uncorrected OSLR (Wu)"
+  ] <- "Uncorrected OSLR"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_uncor_Wu", "pos_mle_exp_uncor_Wu")
-  ] <- "Uncorrected OSLR (exp. dist., Wu)"
+  ] <- "Uncorrected OSLR (exp. dist.)"
   my_df$Test[
     my_df$Test %in% c("pts_na_uncor_Wu", "pos_na_uncor_Wu")
-  ] <- "Uncorrected OSLR (non-par., Wu)"
-  my_df$Test[my_df$Test %in% c("pts_oslr_pqv", "pos_oslr_pqv")] <- "OSLR"
-  my_df$Test[my_df$Test %in% c("pts_oslr_Wu", "pos_oslr_Wu")] <- "OSLR (Wu)"
+  ] <- "Uncorrected OSLR (non-par.)"
+  my_df$Test[my_df$Test %in% c("pts_oslr_pqv", "pos_oslr_pqv")] <- "OSLR (pqv)"
+  my_df$Test[my_df$Test %in% c("pts_oslr_Wu", "pos_oslr_Wu")] <- "OSLR"
 
   return(my_df)
 }
@@ -398,3 +400,75 @@ rename_procedures <- function(my_df) {
 ts_rates_long <- rename_procedures(ts_rates_long)
 os_left_rates_long <- rename_procedures(os_left_rates_long)
 os_right_rates_long <- rename_procedures(os_right_rates_long)
+
+p_vs_np <- c(
+  "TSLR",
+  "Corrected OSLR",
+  "Corrected OSLR (non-par.)",
+  "Uncorrected OSLR",
+  "Uncorrected OSLR (non-par.)"
+)
+
+# Define tibble to show reference line only for T1E rate
+hr_levels <- c("Type I error", "Power")
+ref <- tibble(
+  hr = factor(hr_levels[1], levels = hr_levels), # nur linkes Panel!
+  y = os_alpha,
+  ymin = os_alpha_lb_ci,
+  ymax = os_alpha_ub_ci
+)
+
+# Define colours, linetypes and shapes for all methods
+cols <- c(
+  "Uncorrected OSLR (Wu)" = "#C00000",
+  "Uncorrected OSLR (non-par., Wu)" = "#C00000",
+  "Corrected OSLR (Wu)" = "#009E73",
+  "Corrected OSLR (non-par., Wu)" = "#009E73",
+  "TSLR" = "#333333"
+)
+np <- grepl("non-par", names(cols))
+ltys <- setNames(ifelse(np, "dashed", "solid"), names(cols))
+shps <- setNames(ifelse(np, 17, 16), names(cols)) # 17 = Dreieck, 16 = Punkt
+
+p_vs_np_plot <-
+  os_left_rates_long |>
+  filter(Test %in% p_vs_np, hr %in% c(1, 0.8)) |>
+  mutate(hr = factor(hr, levels = c(1, 0.8), labels = hr_levels)) |>
+  ggplot(aes(x = alloc_ratio, y = rate)) +
+  geom_rect(
+    data = ref,
+    aes(xmin = -Inf, xmax = Inf, ymin = ymin, ymax = ymax),
+    inherit.aes = FALSE,
+    alpha = 0.25
+  ) +
+  geom_hline(data = ref, aes(yintercept = y)) +
+  geom_line(aes(colour = Test, linetype = Test), lwd = 1.5) +
+  geom_point(aes(colour = Test, shape = Test), size = 3) +
+  scale_colour_manual(values = cols, name = "Method") +
+  scale_linetype_manual(values = ltys, name = "Method") +
+  scale_shape_manual(values = shps, name = "Method") +
+  facet_wrap(~hr, scales = "free_y") + # oder scales = "fixed"
+  ylim(0, NA) +
+  xlab(bquote(allocation ~ ratio ~ "(" * n[b] ~ "= 100)")) +
+  ylab("rejection rate") +
+  guides(
+    colour = guide_legend(nrow = 2, byrow = TRUE),
+    linetype = guide_legend(nrow = 2, byrow = TRUE),
+    shape = guide_legend(nrow = 2, byrow = TRUE)
+  ) +
+  theme(
+    strip.text = element_text(size = 14), # Facet-Überschriften
+    axis.title = element_text(size = 14), # Achsentitel
+    axis.text = element_text(size = 12), # Achsenlabels (Ticks)
+    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 13, face = "bold"), # fett
+    legend.position = "bottom",
+    legend.key.width = unit(1.6, "cm"),
+    legend.key.height = unit(0.8, "cm")
+  )
+ggsave(
+  p_vs_np_plot,
+  filename = "results/plots/w_np/p_vs_np.pdf",
+  width = 10,
+  height = 5
+)
