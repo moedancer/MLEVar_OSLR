@@ -208,7 +208,7 @@ for (i in 1:simulation_runs) {
       n_b
   }
   # ...based on estimated non-parametric hazard function
-  est_var_oslr_pqv_na <- sum(reference_na_values)
+  est_var_oslr_pqv_na[i] <- sum(reference_na_values) / n_b
 
   # Estimate additional variance...
   # ...for parametric reference curve
@@ -280,7 +280,7 @@ results$shape <- my_shape
 save(
   results,
   file = paste(
-    "results/single_scenarios/t1e_raw_w_np_KAPPA",
+    "results/single_scenarios/w_np/t1e_raw_w_np_KAPPA",
     sub(x = my_shape, pattern = "\\.", replacement = "dec"),
     "_NA",
     n_a,
