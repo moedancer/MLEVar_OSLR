@@ -19,7 +19,7 @@ for (tmp_file in list.files(
 results_all$n_a <- results_all$n_b / results_all$alloc_ratio
 
 ### Compute different variance estimates
-## Compute Wu's variance with estimated parameters
+## Compute Wu's variance with true parameters
 results_all$est_var_oslr_Wu <- 0.5 *
   results_all$est_var_oslr_qv +
   0.5 * results_all$est_var_oslr_pqv

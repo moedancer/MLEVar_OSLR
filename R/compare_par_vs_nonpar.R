@@ -1,17 +1,12 @@
-### Script to analyse power results from single scenario files with exponential distribution
+library(tidyverse)
 
-library(ggplot2)
-library(tidyr)
-library(ggpubr)
-
-# Load and combine results from all single scenario files
+# Load and combine results from all single scenario files under null hypothesis
 results_all <- NULL
-
 for (tmp_file in list.files(
-  path = "results/single_scenarios",
-  pattern = "t2e_raw_KAPPA1_"
+  path = "results/single_scenarios/w_np/",
+  pattern = "t1e_raw_w_np_KAPPA1_"
 )) {
-  load(paste("results/single_scenarios/", tmp_file, sep = ""))
+  load(paste("results/single_scenarios/w_np/", tmp_file, sep = ""))
   results_all <- rbind(results_all, results)
 }
 
@@ -32,7 +27,12 @@ results_all$est_var_oslr_Wu_mle <- 0.5 *
 results_all$est_var_oslr_Wu_mle_exp <- 0.5 *
   results_all$est_var_oslr_qv +
   0.5 * results_all$est_var_oslr_pqv_mle_exp
-## Compute total variance
+# Version 3: Use non-parametric estimate
+results_all$est_var_oslr_Wu_na <- 0.5 *
+  results_all$est_var_oslr_qv +
+  0.5 * results_all$est_var_oslr_pqv_na
+
+## Compute total variance (including reference curve uncertainty)
 # Version 1: Use Weibull estimates
 results_all$est_var_total_qv <- results_all$est_var_oslr_qv +
   results_all$est_var_mle_error
@@ -47,6 +47,13 @@ results_all$est_var_total_pqv_exp <- results_all$est_var_oslr_pqv_mle_exp +
   results_all$est_var_mle_error_exp
 results_all$est_var_total_Wu_exp <- results_all$est_var_oslr_Wu_mle_exp +
   results_all$est_var_mle_error_exp
+# Version 3: Use non-parametric estimates
+results_all$est_var_total_qv_na <- results_all$est_var_oslr_qv +
+  results_all$est_var_na_error
+results_all$est_var_total_pqv_na <- results_all$est_var_oslr_pqv_na +
+  results_all$est_var_na_error
+results_all$est_var_total_Wu_na <- results_all$est_var_oslr_Wu_na +
+  results_all$est_var_na_error
 
 # Compute test statistics and p-values for true (but in practice unknown) reference hazard
 results_all$oslr_std_qv <- results_all$oslr / sqrt(results_all$est_var_oslr_qv)
@@ -60,11 +67,13 @@ results_all$oslr_std_Wu <- results_all$oslr / sqrt(results_all$est_var_oslr_Wu)
 results_all$pos_oslr_Wu <- pnorm(results_all$oslr_std_Wu)
 results_all$pts_oslr_Wu <- 2 * pnorm(-abs(results_all$oslr_std_Wu))
 
-## Compute raw test statistics with MLE estimate instead of true value
+## Compute raw test statistics with estimates instead of true value
 # Version 1: Use Weibull estimate
 results_all$raw_test_mle <- results_all$oslr + results_all$hazard_diff
 # Version 2: Use exponential estimate
 results_all$raw_test_mle_exp <- results_all$oslr + results_all$hazard_diff_exp
+# Version 2: Use non-parametric estimate
+results_all$raw_test_na <- results_all$oslr + results_all$hazard_diff_np
 
 ## Compute test statistics without correction for MLE
 # Version 1: Use Weibull estimates
@@ -101,6 +110,24 @@ results_all$mle_exp_std_test_uncor_Wu <- results_all$raw_test_mle_exp /
 results_all$pos_mle_exp_uncor_Wu <- pnorm(results_all$mle_exp_std_test_uncor_Wu)
 results_all$pts_mle_exp_uncor_Wu <- 2 *
   pnorm(-abs(results_all$mle_exp_std_test_uncor_Wu))
+# Version 3: Use non-parametric estimates
+results_all$na_std_test_uncor_qv <- results_all$raw_test_na /
+  sqrt(results_all$est_var_oslr_qv)
+results_all$pos_na_uncor_qv <- pnorm(results_all$na_std_test_uncor_qv)
+results_all$pts_na_uncor_qv <- 2 *
+  pnorm(-abs(results_all$na_std_test_uncor_qv))
+results_all$na_std_test_uncor_pqv <- results_all$raw_test_na /
+  sqrt(results_all$est_var_oslr_pqv_na)
+results_all$pos_na_uncor_pqv <- pnorm(
+  results_all$na_std_test_uncor_pqv
+)
+results_all$pts_na_uncor_pqv <- 2 *
+  pnorm(-abs(results_all$na_std_test_uncor_pqv))
+results_all$na_std_test_uncor_Wu <- results_all$raw_test_na /
+  sqrt(results_all$est_var_oslr_Wu_na)
+results_all$pos_na_uncor_Wu <- pnorm(results_all$na_std_test_uncor_Wu)
+results_all$pts_na_uncor_Wu <- 2 *
+  pnorm(-abs(results_all$na_std_test_uncor_Wu))
 
 ## Compute test statistics with correction for MLE
 # Version 1: Use Weibull estimates
@@ -132,6 +159,22 @@ results_all$mle_exp_std_test_cor_Wu <- results_all$raw_test_mle_exp /
 results_all$pos_mle_exp_cor_Wu <- pnorm(results_all$mle_exp_std_test_cor_Wu)
 results_all$pts_mle_exp_cor_Wu <- 2 *
   pnorm(-abs(results_all$mle_exp_std_test_cor_Wu))
+# Version 3: Use non-parametric estimates
+results_all$na_std_test_cor_qv <- results_all$raw_test_na /
+  sqrt(results_all$est_var_total_qv_na)
+results_all$pos_na_cor_qv <- pnorm(results_all$na_std_test_cor_qv)
+results_all$pts_na_cor_qv <- 2 *
+  pnorm(-abs(results_all$na_std_test_cor_qv))
+results_all$na_std_test_cor_pqv <- results_all$raw_test_na /
+  sqrt(results_all$est_var_total_pqv_na)
+results_all$pos_na_cor_pqv <- pnorm(results_all$na_std_test_cor_pqv)
+results_all$pts_na_cor_pqv <- 2 *
+  pnorm(-abs(results_all$na_std_test_cor_pqv))
+results_all$na_std_test_cor_Wu <- results_all$raw_test_na /
+  sqrt(results_all$est_var_total_Wu_na)
+results_all$pos_na_cor_Wu <- pnorm(results_all$na_std_test_cor_Wu)
+results_all$pts_na_cor_Wu <- 2 *
+  pnorm(-abs(results_all$na_std_test_cor_Wu))
 
 # Compute two-sided p-values for two-sample log-rank test
 # NOTE: Check if direction of tests correspond
@@ -163,12 +206,16 @@ ts_alpha_ub_ci <- ts_alpha +
 # 2) OSLR with correct reference curve (Wu's variance)
 # 3) OSLR with estimated reference curve (no correction)
 # 3.1) OSLR with estimated reference curve from exponential distribution if available (no correction)
+# 3.2) OSLR with estimated reference curve from Nelson-Aalen estimation if available (no correction)
 # 4) OSLR with estimated reference curve (no correction, Wu's variance)
 # 4.1) OSLR with estimated reference curve from exponential distribution if available (no correction, Wu's variance)
+# 4.2) OSLR with estimated reference curve from Nelson-Aalen estimation if available (no correction, Wu's variance)
 # 5) Corrected test
 # 5.1) Corrected test with estimates from exponential distribution if available
+# 5.2) Corrected test with estimates from Nelson-Aalen estimation if available
 # 6) Corrected test (Wu's variance for OSLR part)
 # 6.1) Corrected test with estimates from exponential distribution if available (Wu's variance for OSLR part)
+# 6.2) Corrected test with estimates from Nelson-Aalen estimation if available (Wu's variance for OSLR part)
 # 7) Log-rank test
 
 ts_rates <- aggregate(
@@ -177,12 +224,16 @@ ts_rates <- aggregate(
     pts_oslr_Wu,
     pts_mle_uncor_pqv,
     pts_mle_exp_uncor_pqv,
+    pts_na_uncor_pqv,
     pts_mle_uncor_Wu,
     pts_mle_exp_uncor_Wu,
+    pts_na_uncor_Wu,
     pts_mle_cor_pqv,
     pts_mle_exp_cor_pqv,
+    pts_na_cor_pqv,
     pts_mle_cor_Wu,
     pts_mle_exp_cor_Wu,
+    pts_na_cor_Wu,
     pts_lr
   ) ~ n_b + alloc_ratio + shape,
   data = results_all,
@@ -196,12 +247,16 @@ ts_rates_long <- pivot_longer(
     pts_oslr_Wu,
     pts_mle_uncor_pqv,
     pts_mle_exp_uncor_pqv,
+    pts_na_uncor_pqv,
     pts_mle_uncor_Wu,
     pts_mle_exp_uncor_Wu,
+    pts_na_uncor_Wu,
     pts_mle_cor_pqv,
     pts_mle_exp_cor_pqv,
+    pts_na_cor_pqv,
     pts_mle_cor_Wu,
     pts_mle_exp_cor_Wu,
+    pts_na_cor_Wu,
     pts_lr
   ),
   names_to = "Test",
@@ -214,12 +269,16 @@ os_left_rates <- aggregate(
     pos_oslr_Wu,
     pos_mle_uncor_pqv,
     pos_mle_exp_uncor_pqv,
+    pos_na_uncor_pqv,
     pos_mle_uncor_Wu,
     pos_mle_exp_uncor_Wu,
+    pos_na_uncor_Wu,
     pos_mle_cor_pqv,
     pos_mle_exp_cor_pqv,
+    pos_na_cor_pqv,
     pos_mle_cor_Wu,
     pos_mle_exp_cor_Wu,
+    pos_na_cor_Wu,
     pos_lr
   ) ~ n_b + alloc_ratio + shape,
   data = results_all,
@@ -232,12 +291,16 @@ os_left_rates_long <- pivot_longer(
     pos_oslr_Wu,
     pos_mle_uncor_pqv,
     pos_mle_exp_uncor_pqv,
+    pos_na_uncor_pqv,
     pos_mle_uncor_Wu,
     pos_mle_exp_uncor_Wu,
+    pos_na_uncor_Wu,
     pos_mle_cor_pqv,
     pos_mle_exp_cor_pqv,
+    pos_na_cor_pqv,
     pos_mle_cor_Wu,
     pos_mle_exp_cor_Wu,
+    pos_na_cor_Wu,
     pos_lr
   ),
   names_to = "Test",
@@ -250,12 +313,16 @@ os_right_rates <- aggregate(
     pos_oslr_Wu,
     pos_mle_uncor_pqv,
     pos_mle_exp_uncor_pqv,
+    pos_na_uncor_pqv,
     pos_mle_uncor_Wu,
     pos_mle_exp_uncor_Wu,
+    pos_na_uncor_Wu,
     pos_mle_cor_pqv,
     pos_mle_exp_cor_pqv,
+    pos_na_cor_pqv,
     pos_mle_cor_Wu,
     pos_mle_exp_cor_Wu,
+    pos_na_cor_Wu,
     pos_lr
   ) ~ n_b + alloc_ratio + shape,
   data = results_all,
@@ -268,12 +335,16 @@ os_right_rates_long <- pivot_longer(
     pos_oslr_Wu,
     pos_mle_uncor_pqv,
     pos_mle_exp_uncor_pqv,
+    pos_na_uncor_pqv,
     pos_mle_uncor_Wu,
     pos_mle_exp_uncor_Wu,
+    pos_na_uncor_Wu,
     pos_mle_cor_pqv,
     pos_mle_exp_cor_pqv,
+    pos_na_cor_pqv,
     pos_mle_cor_Wu,
     pos_mle_exp_cor_Wu,
+    pos_na_cor_Wu,
     pos_lr
   ),
   names_to = "Test",
@@ -289,11 +360,17 @@ rename_procedures <- function(my_df) {
     my_df$Test %in% c("pts_mle_exp_cor_pqv", "pos_mle_exp_cor_pqv")
   ] <- "Corrected OSLR (exp. dist.)"
   my_df$Test[
+    my_df$Test %in% c("pts_na_cor_pqv", "pos_na_cor_pqv")
+  ] <- "Corrected OSLR (non-par.)"
+  my_df$Test[
     my_df$Test %in% c("pts_mle_cor_Wu", "pos_mle_cor_Wu")
   ] <- "Corrected OSLR (Wu)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_cor_Wu", "pos_mle_exp_cor_Wu")
   ] <- "Corrected OSLR (exp. dist., Wu)"
+  my_df$Test[
+    my_df$Test %in% c("pts_na_cor_Wu", "pos_na_cor_Wu")
+  ] <- "Corrected OSLR (non-par., Wu)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_uncor_pqv", "pos_mle_uncor_pqv")
   ] <- "Uncorrected OSLR"
@@ -301,11 +378,17 @@ rename_procedures <- function(my_df) {
     my_df$Test %in% c("pts_mle_exp_uncor_pqv", "pos_mle_exp_uncor_pqv")
   ] <- "Uncorrected OSLR (exp. dist.)"
   my_df$Test[
+    my_df$Test %in% c("pts_na_uncor_pqv", "pos_na_uncor_pqv")
+  ] <- "Uncorrected OSLR (non-par.)"
+  my_df$Test[
     my_df$Test %in% c("pts_mle_uncor_Wu", "pos_mle_uncor_Wu")
   ] <- "Uncorrected OSLR (Wu)"
   my_df$Test[
     my_df$Test %in% c("pts_mle_exp_uncor_Wu", "pos_mle_exp_uncor_Wu")
   ] <- "Uncorrected OSLR (exp. dist., Wu)"
+  my_df$Test[
+    my_df$Test %in% c("pts_na_uncor_Wu", "pos_na_uncor_Wu")
+  ] <- "Uncorrected OSLR (non-par., Wu)"
   my_df$Test[my_df$Test %in% c("pts_oslr_pqv", "pos_oslr_pqv")] <- "OSLR"
   my_df$Test[my_df$Test %in% c("pts_oslr_Wu", "pos_oslr_Wu")] <- "OSLR (Wu)"
 
@@ -315,105 +398,3 @@ rename_procedures <- function(my_df) {
 ts_rates_long <- rename_procedures(ts_rates_long)
 os_left_rates_long <- rename_procedures(os_left_rates_long)
 os_right_rates_long <- rename_procedures(os_right_rates_long)
-
-plotdir <- "results/plots"
-
-n_b_vec <- unique(results_all$n_b)
-alloc_ratio_vec <- unique(results_all$alloc_ratio)
-kappa_vec <- unique(results_all$shape)
-
-sensible_choices <- c(
-  "Corrected OSLR",
-  "Corrected OSLR (Wu)",
-  "Corrected OSLR (exp. dist.)",
-  "Corrected OSLR (exp. dist., Wu)",
-  "TSLR"
-)
-
-for (alloc_ratio_temp in alloc_ratio_vec) {
-  for (n_b_temp in n_b_vec) {
-    os_left_rates_nfix_kfix_temp <-
-      ggplot(
-        data = os_left_rates_long[
-          os_left_rates_long$n_b == n_b_temp &
-            os_left_rates_long$Test %in% sensible_choices,
-        ],
-        aes(x = alloc_ratio, y = rate)
-      ) +
-      geom_line(aes(colour = Test)) +
-      geom_point(aes(colour = Test)) +
-      ylim(0, NA) +
-      xlab(bquote(
-        allocation ~ ratio ~ "(" * n[b] ~ "=" ~ .(n_b_temp) * ")"
-      )) +
-      ylab("rejection rate")
-    ggsave(
-      filename = paste(
-        "n_kappa_fixed/power_exp_n",
-        n_b_temp,
-        ".pdf",
-        sep = ""
-      ),
-      path = plotdir,
-      plot = os_left_rates_nfix_kfix_temp,
-      device = "pdf",
-      height = 5,
-      width = 7
-    )
-
-    os_left_rates_pifix_kfix_temp <-
-      ggplot(
-        data = os_left_rates_long[
-          os_left_rates_long$alloc_ratio == alloc_ratio_temp &
-            os_left_rates_long$Test %in% sensible_choices,
-        ],
-        aes(x = n_b, y = rate)
-      ) +
-      geom_line(aes(colour = Test)) +
-      geom_point(aes(colour = Test)) +
-      ylim(0, NA) +
-      xlab(bquote(
-        n[b] ~ "(" * allocation ~ ratio ~ "=" ~ .(alloc_ratio_temp) * ")"
-      )) +
-      ylab("rejection rate")
-    ggsave(
-      filename = paste(
-        "alloc_kappa_fixed/power_exp_pi",
-        sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
-        ".pdf",
-        sep = ""
-      ),
-      path = plotdir,
-      plot = os_left_rates_pifix_kfix_temp,
-      device = "pdf",
-      height = 5,
-      width = 7
-    )
-
-    os_left_rates_kfix_temp <-
-      ggarrange(
-        os_left_rates_nfix_kfix_temp,
-        os_left_rates_pifix_kfix_temp,
-        ncol = 2,
-        nrow = 1,
-        common.legend = TRUE,
-        legend = "right"
-      )
-    ggsave(
-      filename = paste(
-        "combined/power_exp",
-        "_n",
-        n_b_temp,
-        "_pi",
-        sub(x = alloc_ratio_temp, pattern = "\\.", replacement = "dec"),
-        ".pdf",
-        sep = ""
-      ),
-      path = plotdir,
-      plot = os_left_rates_kfix_temp,
-      device = "pdf",
-      height = 5,
-      width = 12
-    )
-  }
-}
