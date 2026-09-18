@@ -444,9 +444,9 @@ p_vs_np_plot <-
   geom_hline(data = ref, aes(yintercept = y)) +
   geom_line(aes(colour = Test, linetype = Test), lwd = 1.5) +
   geom_point(aes(colour = Test, shape = Test), size = 3) +
-  scale_colour_manual(values = cols, name = "Method") +
-  scale_linetype_manual(values = ltys, name = "Method") +
-  scale_shape_manual(values = shps, name = "Method") +
+  scale_colour_manual(values = cols, name = "Test") +
+  scale_linetype_manual(values = ltys, name = "Test") +
+  scale_shape_manual(values = shps, name = "Test") +
   facet_wrap(~hr, scales = "free_y") + # oder scales = "fixed"
   ylim(0, NA) +
   xlab(bquote(allocation ~ ratio ~ "(" * n[b] ~ "= 100)")) +
@@ -470,5 +470,5 @@ ggsave(
   p_vs_np_plot,
   filename = "results/plots/w_np/p_vs_np.pdf",
   width = 10,
-  height = 5
+  height = 4.5
 )
