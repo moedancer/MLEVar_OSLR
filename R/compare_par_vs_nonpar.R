@@ -420,10 +420,10 @@ ref <- tibble(
 
 # Define colours, linetypes and shapes for all methods
 cols <- c(
-  "Uncorrected OSLR (Wu)" = "#C00000",
-  "Uncorrected OSLR (non-par., Wu)" = "#C00000",
-  "Corrected OSLR (Wu)" = "#009E73",
-  "Corrected OSLR (non-par., Wu)" = "#009E73",
+  "Uncorrected OSLR" = "#C00000",
+  "Uncorrected OSLR (non-par.)" = "#C00000",
+  "Corrected OSLR" = "#009E73",
+  "Corrected OSLR (non-par.)" = "#009E73",
   "TSLR" = "#333333"
 )
 np <- grepl("non-par", names(cols))

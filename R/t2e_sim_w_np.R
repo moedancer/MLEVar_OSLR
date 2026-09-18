@@ -215,7 +215,7 @@ for (i in 1:simulation_runs) {
       n_b
   }
   # ...based on estimated non-parametric hazard function
-  est_var_oslr_pqv_na[i] <- sum(reference_na_values)
+  est_var_oslr_pqv_na[i] <- sum(reference_na_values) / n_b
 
   # Estimate additional variance...
   # ...for parametric reference curve
